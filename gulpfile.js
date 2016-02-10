@@ -39,7 +39,7 @@ function browserifier() {
             .transform(envify)
             .bundle((err, res) => {
                 if (err) {
-                    this.push(err, null);
+                    gutil.log('ERROR', err);
                     next();
                     return;
                 }
@@ -56,7 +56,7 @@ gulp.task('build:js', () => {
 });
 
 gulp.task('build:html', () => {
-    gulp.src('./client/index.html').pipe(gulp.dest('./server/static/')).pipe(livereload());
+    return gulp.src('./client/index.html').pipe(gulp.dest('./server/static/')).pipe(livereload());
 });
 
 gulp.task('build', ['build:js', 'build:html']);
@@ -76,7 +76,7 @@ gulp.task('serve', ['config', 'build'], (done) => {
     });
 });
 
-gulp.task('watch', ['config', 'serve'], (done) => {
+gulp.task('watch', ['serve'], (done) => {
     gulp.watch('./client/**/*.*', ['build']);
     livereload.listen();
     done();
