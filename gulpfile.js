@@ -34,7 +34,8 @@ function browserifier() {
         objectMode: true,
         flush: (done) => { done(); },
         transform: function (file, enc, next) {
-            browserify(file.path)
+            browserify({entries: [file.path]})
+            .transform('brfs')
             .transform(babelify, {presets: 'es2015'})
             .transform(envify)
             .bundle((err, res) => {
@@ -52,7 +53,7 @@ function browserifier() {
 };
 
 gulp.task('build:js', () => {
-    return gulp.src('./client/script.js').pipe(browserifier()).pipe(gulp.dest('./server/static/')).pipe(livereload());
+    return gulp.src('./client/main.js').pipe(browserifier()).pipe(gulp.dest('./server/static/')).pipe(livereload());
 });
 
 gulp.task('build:html', () => {
