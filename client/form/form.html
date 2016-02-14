@@ -8,21 +8,50 @@
             <th>Note</th>
             <th></th>
         </tr>
+        <% if (!!error) { %>
         <tr>
             <td>
-                <%- date %>
+                <% if (!!error.date) { %>
+                <span class="error"><%= error.date %></span>
+                <% } %>
             </td>
             <td>
-                <%- credit %>
+                <% if (!!error.credit) { %>
+                <span class="error"><%= error.credit %></span>
+                <% } %>
             </td>
             <td>
-                <%- debit %>
+                <% if (!!error.debit) { %>
+                <span class="error"><%= error.debit %></span>
+                <% } %>
             </td>
             <td>
-                <%- amount %>
+                <% if (!!error.amount) { %>
+                <span class="error"><%= error.amount %></span>
+                <% } %>
             </td>
             <td>
-                <%- note %>
+                <% if (!!error.note) { %>
+                <span class="error"><%= error.note %></span>
+                <% } %>
+            </td>
+        </tr>
+        <% } %>
+        <tr>
+            <td>
+                <%- input.date %>
+            </td>
+            <td>
+                <%- input.credit %>
+            </td>
+            <td>
+                <%- input.debit %>
+            </td>
+            <td>
+                <%- input.amount %>
+            </td>
+            <td>
+                <%- input.note %>
             </td>
             <td>
                 <input type="submit" name="save">

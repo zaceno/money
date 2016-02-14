@@ -6,25 +6,34 @@ var html2Element = function (html) {
     return el;
 };
 
-var render = function(str, data) {
-    var elements = {};
-    var html;
-    if (data) {
-        Object.keys(data).forEach((key) => {
-            if (data[key] instanceof HTMLElement) {
-                elements[key] = data[key];
-                data[key] = '<div class="placeholder" id="' + key + '">';
-            }
-        });
-        html = ejs.render(str, data);
-    } else {
-        html = str;
+var render = function(str, values) {
+    if (!values) return html2Element(str);
+
+    var placeholders = {};
+    var dataMap = function (val, key) {
+        if (Array.isArray(val)) {
+            return val.map(dataMap);
+        }
+        if (val instanceof HTMLElement && !!key) {
+            placeholders[key] = val;
+            return '<div class="placeholder" id="' + key + '">';
+        };
+        if (!!val && typeof val === 'object') {
+            var val2 = {};
+            Object.keys(val).forEach((key2) => {
+                if (!val.hasOwnProperty(key2)) return;
+                val2[key2] = dataMap(val[key2], key2);
+            });
+            return val2;
+        }
+        return val;
     }
-    var element = html2Element(html);
-    Object.keys(elements).forEach((key) => {
+    var mapped = dataMap(values);
+    var element = html2Element(ejs.render(str, mapped));
+    Object.keys(placeholders).forEach((key) => {
         var pl = element.querySelector('div.placeholder#' + key);
-        pl.parentNode.replaceChild(elements[key], pl);
-    })
+        pl.parentNode.replaceChild(placeholders[key], pl);
+    });
     return element;
 };
 

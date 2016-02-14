@@ -1,14 +1,9 @@
 const Form = require('./form/form.js');
 const Output = require('./output');
 
-
-
-var form = new Form();
 var output = new Output();
-
-var write = output.set.bind(output);
-form.on('save',  write);
-form.on('invalid', write);
+var form = new Form();
+form.on('submit',  output.set.bind(output));
 
 var container = document.querySelector('#container');
 container.appendChild(form.element);

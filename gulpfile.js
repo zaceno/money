@@ -6,6 +6,8 @@ const browserify = require('browserify');
 const babelify = require('babelify');
 const envify = require('envify');
 const livereload = require('gulp-livereload');
+const less = require('gulp-less');
+const concat = require('gulp-concat');
 
 var ENV_DEFAULTS = {
     HOST: '127.0.0.1',
@@ -60,7 +62,14 @@ gulp.task('build:html', () => {
     return gulp.src('./client/index.html').pipe(gulp.dest('./server/static/')).pipe(livereload());
 });
 
-gulp.task('build', ['build:js', 'build:html']);
+gulp.task('build:css', () => {
+    return gulp.src(['./client/main.css', './client/**/*.css'])
+    .pipe(concat('style.css'))
+    .pipe(less())
+    .pipe(gulp.dest('./server/static'));
+});
+
+gulp.task('build', ['build:js', 'build:html', 'build:css']);
 
 gulp.task('config', (done) => {
     fs.readFile('./config.json', 'utf-8', (err, str) => {

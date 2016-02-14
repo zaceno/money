@@ -1,0 +1,10 @@
+form {
+    th {
+        font-weight: normal;
+        text-align: left;
+    }
+    span.error {
+        font-size: 0.9em;
+        color: #f33;
+    }
+}
