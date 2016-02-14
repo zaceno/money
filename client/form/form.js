@@ -1,97 +1,121 @@
 const ejs = require('ejs');
 const fs = require('fs');
-const val = require('../validator');
+const validator = require('../validator');
 const makeElement = require('../make-element');
 const eventMixin = require('../event-emitter-mixin');
-const Dropdown = require('./dropdown');
+const OptionInput = require('./option-input');
 const DateInput = require('./date-input');
 const NumberInput = require('./number-input');
 const TextInput = require('./text-input');
 const tpl = fs.readFileSync(__dirname + '/form.html', 'utf-8');
 
-var creditAccounts = ['income', 'common', 'zach', 'sara'];
-var debitAccounts = ['zach', 'sara', 'groceries', 'bills', 'kidgear', 'fuel', 'other'];
+var eachProp = function (o, fn) {
+    Object.keys(o).forEach((k) => {
+        if (!o.hasOwnProperty(k)) return;
+        fn(o[k], k, o);
+    });
+};
+var mapObj = function (o, fn) {
+    var oo = {};
+    Object.keys(o).forEach((k) => {
+        if (!o.hasOwnProperty(k)) return;
+        oo[k] = fn(o[k]);
+    });
+    return oo;
+};
 
-var txValidation = val.objectValidator({
-    date: [
-        val.exists(),
-        val.hasFormat(/\d\d\d\d-\d\d-\d\d/),
-        val.isDate(),
-        val.isBefore(new Date().getTime()),
-    ],
-    credit: [
-        val.exists(),
-        val.isOption(creditAccounts),
-    ],
-    debit: [
-        val.exists(),
-        val.isOption(debitAccounts),
-    ],
-    amount: [
-        val.exists(),
-        val.isNumber(),
-        val.atLeast(1),
-    ],
-    note: [
-        val.atLongest(100),
-    ],
-});
-
-
+var obj2Array = function (o, keys) {
+    keys = keys || Object.keys(o);
+    return keys.map((k) => { return o[k]; });
+};
 
 var Form = function () {
     eventMixin(this);
 
-    var dateInput   = new DateInput({name: 'date'});
-    var amountInput = new NumberInput({name: 'amount'});
-    var noteInput   = new TextInput({name: 'note'});
-
-    var creditSelector = new Dropdown({
-        name: 'credit',
-        options: creditAccounts,
-    });
-
-    var debitSelector = new Dropdown({
-        name: 'debit',
-        options: debitAccounts,
-    });
-
-    var tplData = {
-        input: {
-            date: dateInput.element,
-            credit: creditSelector.element,
-            debit: debitSelector.element,
-            amount: amountInput.element,
-            note: noteInput.element,
+    var fields = {
+        date: {
+            label: 'Date',
+            input: new DateInput({name: 'date'}),
+            error: null,
+            validation:
+                validator
+                .exists()
+                .hasFormat(/\d\d\d\d-\d\d-\d\d/)
+                .isDate()
+                .isBefore(new Date().getTime())
+                .get(),
         },
-        error: null
+        credit: {
+            label: 'Credit',
+            input: new OptionInput({name: 'credit', options: creditAccounts}),
+            error: null,
+            validation:
+                validator
+                .exists()
+                .isOption(creditAccounts)
+                .get(),
+        },
+        debit: {
+            label: 'Debit',
+            input: new OptionInput({name: 'debit', options: debitAccounts}),
+            error: null,
+            validation:
+                validator
+                .exists()
+                .isOption(debitAccounts)
+                .get(),
+        },
+        amount: {
+            label: 'Amount',
+            input: new NumberInput({name: 'amount'}),
+            error: null,
+            validation:
+                validator
+                .exists()
+                .isNumber()
+                .atLeast(1)
+                .get(),
+        },
+        note: {
+            label: 'Note',
+            input: new TextInput({name: 'note'}),
+            error: null,
+            validation:
+                validator
+                .atLongest(100)
+                .get()
+        },
     };
-    this.element = makeElement(tpl, tplData);
 
     this.value = () => {
-        return {
-            date:    dateInput.value(),
-            credit:  creditSelector.value(),
-            debit:   debitSelector.value(),
-            amount:  amountInput.value(),
-            note:    noteInput.value(),
-        }
+        return mapObj(tplData, (field) => {
+            return field.input.value();
+        });
     };
-    this.errors = () => {  return txValidation(this.value()); };
+
+    this.errors = () => {
+        var errors = mapObj(fields, (field) => { return field.error;});
+        return !!Object.keys(errors).length ? errors : null;
+    };
+
     var onSubmit = (e) => {
-            e.preventDefault(true);
-            var data = this.value();
-            var err = txValidation(data);
-            tplData.error = err;
-            var newElement = makeElement(tpl, tplData);
-            if (this.element.parentNode) {
-                this.element.parentNode.replaceChild(newElement, this.element);
-            }
-            this.element = newElement;
-            this.element.addEventListener('submit', onSubmit);
-            if (!err) this.emit('submit', data);
+        e.preventDefault(true);
+        eachProp(tplData, (field) => { field.error = field.validator(field.input.value()) });
+        render();
+        if (!err) this.emit('submit', this.value());
     };
-    this.element.addEventListener('submit', onSubmit);
+
+    var render = () => {
+        var newElement = makeElement(tpl, {
+            fields: obj2Array(fields),
+            errors: this.errors(),
+        });
+        if (this.element && this.element.parentNode) {
+            this.element.parentNode.replaceChild(newElement, this.element);
+        }
+        this.element = newElement;
+        this.element.addEventListener('submit', onSubmit);
+    };
 };
 
 module.exports = Form;

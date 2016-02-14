@@ -1,58 +1,27 @@
 <form name="transaction">
     <table>
         <tr>
-            <th>Date</th>
-            <th>Credit</th>
-            <th>Debit</th>
-            <th>Amount</th>
-            <th>Note</th>
+            <% fields.forEach(function (field) { %>
+            <th><%= field.label %></th>
+            <% })%>
             <th></th>
         </tr>
-        <% if (!!error) { %>
+        <% if (!!errors) { %>
         <tr>
-            <td>
-                <% if (!!error.date) { %>
-                <span class="error"><%= error.date %></span>
-                <% } %>
-            </td>
-            <td>
-                <% if (!!error.credit) { %>
-                <span class="error"><%= error.credit %></span>
-                <% } %>
-            </td>
-            <td>
-                <% if (!!error.debit) { %>
-                <span class="error"><%= error.debit %></span>
-                <% } %>
-            </td>
-            <td>
-                <% if (!!error.amount) { %>
-                <span class="error"><%= error.amount %></span>
-                <% } %>
-            </td>
-            <td>
-                <% if (!!error.note) { %>
-                <span class="error"><%= error.note %></span>
-                <% } %>
-            </td>
+            <% fields.forEach(function (field) { %>
+                <td>
+                    <% if (!!field.error) { %>
+                    <span class="error"><%= field.error %></span>
+                    <% } %>
+                </td>
+                <td></td>
+            <% })%>
         </tr>
         <% } %>
         <tr>
-            <td>
-                <%- input.date %>
-            </td>
-            <td>
-                <%- input.credit %>
-            </td>
-            <td>
-                <%- input.debit %>
-            </td>
-            <td>
-                <%- input.amount %>
-            </td>
-            <td>
-                <%- input.note %>
-            </td>
+            <% fields.forEach(function (field) { %>
+            <td><%- field.input %></td>
+            <% })%>
             <td>
                 <input type="submit" name="save">
             </td>
