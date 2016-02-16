@@ -32,12 +32,14 @@ var obj2Array = function (o, keys) {
 var Form = function () {
     eventMixin(this);
 
+    var creditAccounts = ['income', 'common', 'zach', 'sara'];
+    var debitAccounts = ['groceries', 'bills', 'fuel', 'kidgear', 'other', 'zach', 'sara'];
     var fields = {
         date: {
             label: 'Date',
             input: new DateInput({name: 'date'}),
             error: null,
-            validation:
+            validator:
                 validator
                 .exists()
                 .hasFormat(/\d\d\d\d-\d\d-\d\d/)
@@ -49,7 +51,7 @@ var Form = function () {
             label: 'Credit',
             input: new OptionInput({name: 'credit', options: creditAccounts}),
             error: null,
-            validation:
+            validator:
                 validator
                 .exists()
                 .isOption(creditAccounts)
@@ -59,7 +61,7 @@ var Form = function () {
             label: 'Debit',
             input: new OptionInput({name: 'debit', options: debitAccounts}),
             error: null,
-            validation:
+            validator:
                 validator
                 .exists()
                 .isOption(debitAccounts)
@@ -69,7 +71,7 @@ var Form = function () {
             label: 'Amount',
             input: new NumberInput({name: 'amount'}),
             error: null,
-            validation:
+            validator:
                 validator
                 .exists()
                 .isNumber()
@@ -80,15 +82,15 @@ var Form = function () {
             label: 'Note',
             input: new TextInput({name: 'note'}),
             error: null,
-            validation:
+            validator:
                 validator
                 .atLongest(100)
-                .get()
+                .get(),
         },
     };
 
     this.value = () => {
-        return mapObj(tplData, (field) => {
+        return mapObj(fields, (field) => {
             return field.input.value();
         });
     };
@@ -100,22 +102,35 @@ var Form = function () {
 
     var onSubmit = (e) => {
         e.preventDefault(true);
-        eachProp(tplData, (field) => { field.error = field.validator(field.input.value()) });
+        eachProp(fields, (field) => { field.error = field.validator(field.input.value()) });
         render();
         if (!err) this.emit('submit', this.value());
     };
 
     var render = () => {
-        var newElement = makeElement(tpl, {
-            fields: obj2Array(fields),
+        var tplData = {
+            fields: obj2Array(
+                mapObj(
+                    fields,
+                    (field) => {
+                        return {
+                            input: field.input.element,
+                            label: field.label,
+                            error: field.error,
+                        };
+                    }
+                )
+            ),
             errors: this.errors(),
-        });
-        if (this.element && this.element.parentNode) {
+        };
+        var newElement = makeElement(tpl, tplData);
+        if (!!this.element && !!this.element.parentNode) {
             this.element.parentNode.replaceChild(newElement, this.element);
         }
         this.element = newElement;
         this.element.addEventListener('submit', onSubmit);
     };
+    render();
 };
 
 module.exports = Form;

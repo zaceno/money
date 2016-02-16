@@ -38,8 +38,11 @@ var validator = {
 
     define: function (name, fn, msg) {
         this[name] = function () {
-            return this.chain(fn.bind.apply(fn, [null].concat(Array.prototype.slice.call(arguments))), msg);
+            var args = Array.prototype.slice.call(arguments);
+            msg = args.reduce((msg, arg) => { return msg.replace(/%s/, '' + arg)}, msg);
+            return this.chain(fn.bind.apply(fn, [null].concat(args)), msg);
         };
+        return this;
     },
 };
 

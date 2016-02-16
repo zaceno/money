@@ -12,7 +12,7 @@ var render = function(str, values) {
     var placeholders = {};
     var dataMap = function (val, key) {
         if (Array.isArray(val)) {
-            return val.map(dataMap);
+            return val.map((val2, n) => { return dataMap(val2, (!!key ? key + '-': 'x') + n)});
         }
         if (val instanceof HTMLElement && !!key) {
             placeholders[key] = val;
@@ -22,7 +22,7 @@ var render = function(str, values) {
             var val2 = {};
             Object.keys(val).forEach((key2) => {
                 if (!val.hasOwnProperty(key2)) return;
-                val2[key2] = dataMap(val[key2], key2);
+                val2[key2] = dataMap(val[key2], (key || 'x') + '-' + key2);
             });
             return val2;
         }

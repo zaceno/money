@@ -8,6 +8,7 @@ const envify = require('envify');
 const livereload = require('gulp-livereload');
 const less = require('gulp-less');
 const concat = require('gulp-concat');
+const mocha = require('gulp-mocha');
 
 var ENV_DEFAULTS = {
     HOST: '127.0.0.1',
@@ -32,7 +33,21 @@ function copyProps(target, defaults, overrides) {
     and processes it for client side use.
 */
 function browserifier() {
-    return new Transform({
+    return ;
+};
+
+gulp.task('test', () => {
+    return gulp.src('./client/**/*.spec.js', {read: 'false'})
+    .pipe(mocha({reporter: 'min'}))
+    .on('error', function (e)  {
+        gutil.log(e);
+        this.emit('end'); //keeps watches alive
+    });
+});
+
+gulp.task('build:js', () => {
+    return gulp.src('./client/main.js')
+    .pipe(new Transform({
         objectMode: true,
         flush: (done) => { done(); },
         transform: function (file, enc, next) {
@@ -51,15 +66,14 @@ function browserifier() {
                 next();
             });
         },
-    });
-};
-
-gulp.task('build:js', () => {
-    return gulp.src('./client/main.js').pipe(browserifier()).pipe(gulp.dest('./server/static/')).pipe(livereload());
+    })).pipe(gulp.dest('./server/static/'))
+    .pipe(livereload());
 });
 
 gulp.task('build:html', () => {
-    return gulp.src('./client/index.html').pipe(gulp.dest('./server/static/')).pipe(livereload());
+    return gulp.src('./client/index.html')
+    .pipe(gulp.dest('./server/static/'))
+    .pipe(livereload());
 });
 
 gulp.task('build:css', () => {
@@ -69,14 +83,14 @@ gulp.task('build:css', () => {
     .pipe(gulp.dest('./server/static'));
 });
 
-gulp.task('build', ['build:js', 'build:html', 'build:css']);
-
 gulp.task('config', (done) => {
     fs.readFile('./config.json', 'utf-8', (err, str) => {
         copyProps(process.env, ENV_DEFAULTS, !!err ? null : JSON.parse(str))
         done();
     });
 });
+
+gulp.task('build', ['build:js', 'build:html', 'build:css']);
 
 gulp.task('serve', ['config', 'build'], (done) => {
     require('./server/index.js')((err, server, app) => {
@@ -87,10 +101,10 @@ gulp.task('serve', ['config', 'build'], (done) => {
 });
 
 gulp.task('watch', ['serve'], (done) => {
-    gulp.watch('./client/**/*.*', ['build']);
+    gulp.watch('./client/**/*.*', ['build', 'test']);
     livereload.listen();
     done();
 });
 
 
-gulp.task('default', ['watch']);
+gulp.task('default', ['watch', 'test']);
