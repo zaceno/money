@@ -1,5 +1,5 @@
 const fs = require('fs');
-const makeElement = require('../make-element');
+const makeElement = require('../../make-element');
 const html = fs.readFileSync(__dirname + '/input.html', 'utf-8');
 
 var TextInput = function (opts) {

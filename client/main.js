@@ -1,4 +1,4 @@
-const Form = require('./form/form.js');
+const Form = require('./transaction/form.js');
 const Output = require('./output');
 
 var output = new Output();

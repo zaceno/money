@@ -3,11 +3,12 @@ const fs = require('fs');
 const validator = require('../validator');
 const makeElement = require('../make-element');
 const eventMixin = require('../event-emitter-mixin');
-const OptionInput = require('./option-input');
-const DateInput = require('./date-input');
-const NumberInput = require('./number-input');
-const TextInput = require('./text-input');
+const OptionInput = require('../widgets/input/option-input');
+const DateInput = require('../widgets/input/date-input');
+const NumberInput = require('../widgets/input/number-input');
+const TextInput = require('../widgets/input/text-input');
 const tpl = fs.readFileSync(__dirname + '/form.html', 'utf-8');
+const Transaction = require('./model.js');
 
 var eachProp = function (o, fn) {
     Object.keys(o).forEach((k) => {
@@ -88,23 +89,44 @@ var Form = function () {
                 .get(),
         },
     };
-
+    this.fields = fields;
     this.value = () => {
         return mapObj(fields, (field) => {
             return field.input.value();
         });
     };
 
-    this.errors = () => {
-        var errors = mapObj(fields, (field) => { return field.error;});
-        return !!Object.keys(errors).length ? errors : null;
-    };
+    var getErrors = () => {
+        return mapObj(fields, (field) => { return field.error;});
+    }
 
-    var onSubmit = (e) => {
-        e.preventDefault(true);
-        eachProp(fields, (field) => { field.error = field.validator(field.input.value()) });
+    Object.defineProperty(this, 'errors', {
+        configurable: true,
+        enumerable: true,
+        readonly: true,
+        get: function () {
+            return obj2Array(fields)
+            .map((field) => { return !!field.error})
+            .reduce((all, err) => { return all || err; }, false);
+        },
+    });
+
+    var model = null;
+    Object.defineProperty(this, 'model', {
+        configurable: true,
+        enumerable: true,
+        get: () => { return model;},
+        set: (m) => { model = m; },
+    });
+
+    this.submit = (e) => {
+        e && e.preventDefault(true);
+        eachProp(fields, (field) => { field.error = field.validator(field.input.value) });
+        if (!this.errors) {
+            model = model || new Transaction();
+            eachProp(fields, (field, name) => { model[name] = field.input.value; });
+        }
         render();
-        if (!err) this.emit('submit', this.value());
     };
 
     var render = () => {
@@ -121,15 +143,17 @@ var Form = function () {
                     }
                 )
             ),
-            errors: this.errors(),
+            errors: getErrors(),
         };
         var newElement = makeElement(tpl, tplData);
         if (!!this.element && !!this.element.parentNode) {
             this.element.parentNode.replaceChild(newElement, this.element);
         }
         this.element = newElement;
-        this.element.addEventListener('submit', onSubmit);
+        this.element.addEventListener('submit', this.submit.bind(this));
     };
+
+
     render();
 };
 

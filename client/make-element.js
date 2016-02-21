@@ -1,3 +1,5 @@
+const ejs = require('ejs');
+
 var html2Element = function (html) {
     var div = document.createElement(div);
     div.innerHTML = html;
@@ -14,7 +16,7 @@ var render = function(str, values) {
         if (Array.isArray(val)) {
             return val.map((val2, n) => { return dataMap(val2, (!!key ? key + '-': 'x') + n)});
         }
-        if (val instanceof HTMLElement && !!key) {
+        if (val instanceof window.HTMLElement && !!key) {
             placeholders[key] = val;
             return '<div class="placeholder" id="' + key + '">';
         };
