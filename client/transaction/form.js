@@ -9,26 +9,7 @@ const NumberInput = require('../widgets/input/number-input');
 const TextInput = require('../widgets/input/text-input');
 const tpl = fs.readFileSync(__dirname + '/form.html', 'utf-8');
 const Transaction = require('./model.js');
-
-var eachProp = function (o, fn) {
-    Object.keys(o).forEach((k) => {
-        if (!o.hasOwnProperty(k)) return;
-        fn(o[k], k, o);
-    });
-};
-var mapObj = function (o, fn) {
-    var oo = {};
-    Object.keys(o).forEach((k) => {
-        if (!o.hasOwnProperty(k)) return;
-        oo[k] = fn(o[k]);
-    });
-    return oo;
-};
-
-var obj2Array = function (o, keys) {
-    keys = keys || Object.keys(o);
-    return keys.map((k) => { return o[k]; });
-};
+const outil = require('../object-utilities');
 
 var Form = function () {
     eventMixin(this);
@@ -91,13 +72,13 @@ var Form = function () {
     };
     this.fields = fields;
     this.value = () => {
-        return mapObj(fields, (field) => {
+        return outil.map(fields, (field) => {
             return field.input.value();
         });
     };
 
     var getErrors = () => {
-        return mapObj(fields, (field) => { return field.error;});
+        return outil.map(fields, (field) => { return field.error;});
     }
 
     Object.defineProperty(this, 'errors', {
@@ -105,7 +86,7 @@ var Form = function () {
         enumerable: true,
         readonly: true,
         get: function () {
-            return obj2Array(fields)
+            return outil.values(fields)
             .map((field) => { return !!field.error})
             .reduce((all, err) => { return all || err; }, false);
         },
@@ -119,30 +100,34 @@ var Form = function () {
         set: (m) => { model = m; },
     });
 
+    var state = 'initial';
+    Object.defineProperty(this, 'state', {
+        configurable: true,
+        enumerable: true,
+        readonly: true,
+        get: () => { return state; },
+    });
+
     this.submit = (e) => {
         e && e.preventDefault(true);
-        eachProp(fields, (field) => { field.error = field.validator(field.input.value) });
+        outil.forEach(fields, (field) => { field.error = field.validator(field.input.value) });
         if (!this.errors) {
-            model = model || new Transaction();
-            eachProp(fields, (field, name) => { model[name] = field.input.value; });
+            model = outil.map(fields, (f) => { return f.input.value; }, model || new Transaction());
+            state = 'saving';
+            model.save().then(() => { this.emit('saved'); })
         }
         render();
     };
 
     var render = () => {
         var tplData = {
-            fields: obj2Array(
-                mapObj(
-                    fields,
-                    (field) => {
-                        return {
-                            input: field.input.element,
-                            label: field.label,
-                            error: field.error,
-                        };
-                    }
-                )
-            ),
+            fields: outil.values(outil.map(fields, (field) => {
+                return {
+                    input: field.input.element,
+                    label: field.label,
+                    error: field.error,
+                };
+            })),
             errors: getErrors(),
         };
         var newElement = makeElement(tpl, tplData);

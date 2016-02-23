@@ -89,27 +89,28 @@ global.window = document.defaultView;
 const should = require('should');
 const TransactionForm = require('../transaction/form.js');
 const Transaction = require('../transaction/model.js');
-
-describe('Invalid entry into new model', () => {
+const transactionDB = require('../transaction-db');
+describe('Invalid entry into new model', function () {
     var form;
-    beforeEach(()=>{
+    beforeEach(function () {
         form = new TransactionForm();
         form.fields.date.input.value = 'notadate';
         form.fields.amount.input.value = 'notanumber';
         form.fields.note.input.value = 'somenote';
         form.submit();
     });
-    it ('renders the errors', () => {
+    it ('renders the errors', function () {
         form.errors.should.equal(true);
         form.fields.date.error.should.equal('wrong format');
         form.fields.amount.error.should.equal('not a number');
     });
-    it('provides null for a model', () => {
+    it('provides null for a model', function () {
         should(form.model).equal(null);
     });
 });
-describe('Valid entry into new model', () => {
-    beforeEach(()=>{
+describe('Valid entry into new model', function () {
+    var form;
+    beforeEach(function () {
         form = new TransactionForm();
         form.fields.date.input.value = '2012-12-12';
         form.fields.credit.input.value = 'income';
@@ -118,7 +119,7 @@ describe('Valid entry into new model', () => {
         form.fields.note.input.value = 'somenote';
         form.submit();
     });
-    it ('has no errors', () => {
+    it ('has no errors', function () {
         form.errors.should.equal(false);
         should(form.fields.date.error).equal(null);
         should(form.fields.debit.error).equal(null);
@@ -126,7 +127,7 @@ describe('Valid entry into new model', () => {
         should(form.fields.amount.error).equal(null);
         should(form.fields.note.error).equal(null);
     });
-    it('provides valid transaction for a model', () => {
+    it('provides valid transaction for a model', function () {
         form.model.should.be.instanceof(Transaction);
         form.model.date.should.equal('2012-12-12');
         form.model.credit.should.equal('income');
@@ -135,7 +136,34 @@ describe('Valid entry into new model', () => {
         form.model.note.should.equal('somenote');
     });
 });
-xdescribe('Set transaction on form', () => {});
-xdescribe('Invalid edit transaction on form', () => {});
-xdescribe('Valid edit transaction on form', () => {});
-xdescribe('Reset transaction', () => {});
+
+
+
+
+describe.only('Saving', function () {
+    afterEach(function () {
+        return transactionDB.destroy()
+    });
+    it('adds new transaction to database', function (done) {
+        var form = new TransactionForm();
+        form.fields.date.input.value = '2012-12-12';
+        form.fields.credit.input.value = 'income';
+        form.fields.debit.input.value = 'groceries';
+        form.fields.amount.input.value = 999;
+        form.fields.note.input.value = 'somenote';
+        form.on('saved', function () {
+            Transaction.list().then(function (transactions) {
+                transactions.length.should.equal(1);
+                var t = transactions[0];
+                t.date.should.equal('2012-12-12');
+                t.credit.should.equal('income');
+                t.debit.should.equal('groceries');
+                t.amount.should.equal(999);
+                t.note.should.equal('somenote');
+                done();
+            }).catch(done);
+        });
+        form.submit();
+        form.state.should.equal('saving');
+    });
+});
