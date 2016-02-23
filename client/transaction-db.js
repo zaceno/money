@@ -6,5 +6,5 @@ if (process.env.mode === 'test') {
     const memdown = require('memdown');
     opts = {db: memdown};
 }
-
-module.exports = new PouchDB(name, opts);
+var db = new PouchDB(name, opts);
+module.exports = db;

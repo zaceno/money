@@ -82,14 +82,15 @@ so form.model = (allows you to set new model)
 form.model (allows you to get new model, if any set, or any errors)
 
 */
+process.env.mode = 'test';
 const jsdom = require('jsdom');
 global.document = jsdom.jsdom('<html><head></head><body></body></html');
 global.window = document.defaultView;
-
 const should = require('should');
 const TransactionForm = require('../transaction/form.js');
 const Transaction = require('../transaction/model.js');
 const transactionDB = require('../transaction-db');
+
 describe('Invalid entry into new model', function () {
     var form;
     beforeEach(function () {
@@ -140,9 +141,13 @@ describe('Valid entry into new model', function () {
 
 
 
-describe.only('Saving', function () {
-    afterEach(function () {
-        return transactionDB.destroy()
+describe('Saving', function () {
+    beforeEach(function () {
+        return transactionDB.allDocs().then((res) => {
+            return Promise.all(res.rows.map((row) => {
+                return transactionDB.remove(row.id, row.value.rev);
+            }));
+        });
     });
     it('adds new transaction to database', function (done) {
         var form = new TransactionForm();

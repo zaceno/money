@@ -24,7 +24,7 @@ Transaction._defaults = {
 Transaction.list = function () {
     return db.allDocs({include_docs: true}).then(function (res) {
         return res.rows.map((row) => { return new Transaction(row.doc); });
-    })
+    });
 };
 
 module.exports = Transaction;
