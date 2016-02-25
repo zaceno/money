@@ -1,5 +1,5 @@
 const should = require('should');
-const validator = require('./validator');
+const validator = require('../validator');
 
 describe('validator', () => {
     describe('no rules defined', () => {

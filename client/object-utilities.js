@@ -19,7 +19,7 @@ var util = {
     },
 
     copy: function (src, tgt) {
-        util.map(src, (v) => { return v; }, tgt);
+        return util.map(src, (v) => { return v; }, tgt);
     },
 };
 

@@ -3,11 +3,10 @@ const fs = require('fs');
 const validator = require('../validator');
 const makeElement = require('../make-element');
 const eventMixin = require('../event-emitter-mixin');
-const OptionInput = require('../widgets/input/option-input');
-const DateInput = require('../widgets/input/date-input');
-const NumberInput = require('../widgets/input/number-input');
-const TextInput = require('../widgets/input/text-input');
 const tpl = fs.readFileSync(__dirname + '/form.html', 'utf-8');
+const tplInput = fs.readFileSync(__dirname + '/input.html', 'utf-8');
+const tplSelect = fs.readFileSync(__dirname + '/select.html', 'utf-8')
+
 const Transaction = require('./model.js');
 const outil = require('../object-utilities');
 
@@ -19,7 +18,7 @@ var Form = function () {
     var fields = {
         date: {
             label: 'Date',
-            input: new DateInput({name: 'date'}),
+            input: makeElement(tplInput, {type: 'date', name: 'date', value: ''}),
             error: null,
             validator:
                 validator
@@ -31,7 +30,7 @@ var Form = function () {
         },
         credit: {
             label: 'Credit',
-            input: new OptionInput({name: 'credit', options: creditAccounts}),
+            input: makeElement(tplSelect, {name: 'credit', options: creditAccounts}),
             error: null,
             validator:
                 validator
@@ -41,7 +40,7 @@ var Form = function () {
         },
         debit: {
             label: 'Debit',
-            input: new OptionInput({name: 'debit', options: debitAccounts}),
+            input: makeElement(tplSelect, {name: 'debit', options: debitAccounts}),
             error: null,
             validator:
                 validator
@@ -51,7 +50,7 @@ var Form = function () {
         },
         amount: {
             label: 'Amount',
-            input: new NumberInput({name: 'amount'}),
+            input: makeElement(tplInput, {name: 'amount', type: 'number', value: ''}),
             error: null,
             validator:
                 validator
@@ -62,7 +61,7 @@ var Form = function () {
         },
         note: {
             label: 'Note',
-            input: new TextInput({name: 'note'}),
+            input: makeElement(tplInput, {type: 'text', name: 'note', value: ''}),
             error: null,
             validator:
                 validator
@@ -70,17 +69,23 @@ var Form = function () {
                 .get(),
         },
     };
+    this.submitButton = makeElement(tplInput, {type: 'submit', name: 'submit', value: 'Submit'});
     this.fields = fields;
-    this.value = () => {
-        return outil.map(fields, (field) => {
-            return field.input.value();
-        });
-    };
 
     var getErrors = () => {
         return outil.map(fields, (field) => { return field.error;});
-    }
+    };
 
+    Object.defineProperty(this, 'value', {
+        configurable: true,
+        enumerable: true,
+        readonly: true,
+        get: () => {
+            var o = outil.map(fields, (field) => { return field.input.value });
+            o.amount = +o.amount;
+            return o;
+        }
+    })
     Object.defineProperty(this, 'errors', {
         configurable: true,
         enumerable: true,
@@ -100,21 +105,25 @@ var Form = function () {
         set: (m) => { model = m; },
     });
 
-    var state = 'initial';
-    Object.defineProperty(this, 'state', {
-        configurable: true,
-        enumerable: true,
-        readonly: true,
-        get: () => { return state; },
-    });
 
     this.submit = (e) => {
         e && e.preventDefault(true);
         outil.forEach(fields, (field) => { field.error = field.validator(field.input.value) });
         if (!this.errors) {
-            model = outil.map(fields, (f) => { return f.input.value; }, model || new Transaction());
-            state = 'saving';
-            model.save().then(() => { this.emit('saved'); })
+            model = outil.copy(this.value, model || new Transaction());
+            outil.forEach(fields, (field) => { field.input.disabled = true; });
+            this.submitButton.disabled = true;
+            model.save().then(() => {
+                outil.forEach(fields, (field) => {
+                    field.input.disabled = false;
+                    field.input.value = '';
+                });
+                this.submitButton.disabled = false;
+                model = null;
+                process.nextTick(() =>{
+                    this.emit('saved');
+                });
+            }, (e) => {console.log('CANTSAVE', e)});
         }
         render();
     };
@@ -123,11 +132,12 @@ var Form = function () {
         var tplData = {
             fields: outil.values(outil.map(fields, (field) => {
                 return {
-                    input: field.input.element,
+                    input: field.input,
                     label: field.label,
                     error: field.error,
                 };
             })),
+            submitButton: this.submitButton,
             errors: getErrors(),
         };
         var newElement = makeElement(tpl, tplData);

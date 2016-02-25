@@ -14,6 +14,7 @@ var ENV_DEFAULTS = {
     HOST: '127.0.0.1',
     PORT: 8080,
     liveReload: false,
+    mode: 'dev',
 };
 
 //take propertoes from source, and put into a target,
@@ -36,12 +37,19 @@ function browserifier() {
     return ;
 };
 
-gulp.task('test', () => {
+//test needs to depend on build task, so the overriding of
+//process env mode does not live on to the browser.
+gulp.task('test', ['build'], () => {
+    var omode = process.env.mode;
+    process.env.mode = 'test';
     return gulp.src('./client/**/*.spec.js', {read: 'false'})
     .pipe(mocha({reporter: 'min'}))
     .on('error', function (e)  {
         gutil.log(e);
         this.emit('end'); //keeps watches alive
+    })
+    .on('end', function () {
+        process.env.mode = omode;
     });
 });
 
