@@ -120,10 +120,8 @@ var Form = function () {
                 });
                 this.submitButton.disabled = false;
                 model = null;
-                process.nextTick(() =>{
-                    this.emit('saved');
-                });
-            }, (e) => {console.log('CANTSAVE', e)});
+                process.nextTick(() =>{ this.emit('saved'); });
+            });
         }
         render();
     };

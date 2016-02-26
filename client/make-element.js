@@ -18,7 +18,7 @@ var render = function(str, values) {
         }
         if (val instanceof window.HTMLElement && !!key) {
             placeholders[key] = val;
-            return '<div class="placeholder" id="' + key + '">';
+            return '<div class="placeholder" id="' + key + '"></div>';
         };
         if (!!val && typeof val === 'object') {
             var val2 = {};
