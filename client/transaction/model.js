@@ -12,7 +12,7 @@ Transaction.prototype.save = function () {
         return db.post(this).then((res) => {
             this._id = res.id;
             this._rev = res.rev;
-            Transaction.emit('created', this);
+            process.nextTick(() => { Transaction.emit('created', this) });
         });
     }
 }
@@ -29,6 +29,9 @@ Transaction.list = function () {
     return db.allDocs({include_docs: true}).then(function (res) {
         return res.rows.map((row) => { return new Transaction(row.doc); });
     });
+};
+Transaction.create = function (data) {
+    return new Transaction(data).save();
 };
 eventMixin(Transaction);
 

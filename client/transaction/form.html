@@ -6,7 +6,7 @@
             <% })%>
             <th></th>
         </tr>
-        <% if (!!errors) { %>
+        <% if (state === 'error') { %>
         <tr>
             <% fields.forEach(function (field) { %>
                 <td>
@@ -23,7 +23,7 @@
             <td><%- field.input %></td>
             <% })%>
             <td>
-                <%- submitButton %>
+                <input type="submit" name="submit" value="submit">
             </td>
         </tr>
     </table>

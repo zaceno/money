@@ -16,19 +16,16 @@ describe('form entry', function () {
         });
     });
     beforeEach(function () {
-        app.form = new App();
+        app = new App();
     });
     describe('form initially', function () {
         it('is empty', function () {
-            app.form.fields.date.input.disabled.should.equal(false);
-            app.form.fields.credit.input.disabled.should.equal(false);
-            app.form.fields.debit.input.disabled.should.equal(false);
-            app.form.fields.amount.input.disabled.should.equal(false);
-            app.form.fields.note.input.disabled.should.equal(false);
-            app.form.submitButton.disabled.should.equal(false);
             app.form.fields.date.input.value.should.equal('');
             app.form.fields.amount.input.value.should.equal('');
             app.form.fields.note.input.value.should.equal('');
+        });
+        it('has initial state', function () {
+            app.form.state.should.equal('initial');
         });
     });
     describe('invalid entry', function () {
@@ -56,9 +53,11 @@ describe('form entry', function () {
             app.form.fields.note.input.value.should.equal('somenote');;
         });
         it('registers validation errors in the form', function () {
-            app.form.errors.should.equal(true);
             app.form.fields.date.error.should.equal('wrong format');
             app.form.fields.amount.error.should.equal('not a number');
+        });
+        it('form has error state', function () {
+            app.form.state.should.equal('error');
         });
     });
     describe('valid entry', function () {
@@ -73,22 +72,17 @@ describe('form entry', function () {
             };
 
             Object.keys(input).forEach((k) => {
-                app.form.fields[k] = input[k];
+                app.form.fields[k].input.value = input[k];
             });
             app.form.submit();
         });
         describe('while saving', function () {
-            it('should have disabled state', function () {
-                app.form.fields.date.input.disabled.should.equal(true);
-                app.form.fields.credit.input.disabled.should.equal(true);
-                app.form.fields.debit.input.disabled.should.equal(true);
-                app.form.fields.amount.input.disabled.should.equal(true);
-                app.form.fields.note.input.disabled.should.equal(true);
-                app.form.submitButton.disabled.should.equal(true);
+            it('should have saving state', function () {
+                app.form.state.should.equal('saving');
             });
         });
         describe('after saving', function () {
-            var output;
+            var output = '';
             beforeEach(function (done) {
                 app.output.once('update', function (str) {
                     output = str;
@@ -104,16 +98,13 @@ describe('form entry', function () {
                 o.should.have.property('_rev');
                 o._rev.should.startWith('1-');
             });
+            it('shuould have reset values' ,function () {
+                app.form.fields.date.input.value.should.equal('');
+                app.form.fields.amount.input.value.should.equal('');
+                app.form.fields.note.input.value.should.equal('');
+            });
             it('should be in initial state', function () {
-                form.fields.date.input.disabled.should.equal(false);
-                form.fields.credit.input.disabled.should.equal(false);
-                form.fields.debit.input.disabled.should.equal(false);
-                form.fields.amount.input.disabled.should.equal(false);
-                form.fields.note.input.disabled.should.equal(false);
-                form.submitButton.disabled.should.equal(false);
-                form.fields.date.input.value.should.equal('');
-                form.fields.amount.input.value.should.equal('');
-                form.fields.note.input.value.should.equal('');
+                app.form.state.should.equal('initial');
             });
         });
     });

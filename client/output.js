@@ -12,7 +12,7 @@ var Output = function () {
         get: () => { return this.element.innerHTML; },
         set: (v) => {
             this.element.innerHTML = v;
-            this.emit('update');
+            this.emit('update', v);
         },
     });
 };
