@@ -2,21 +2,19 @@ const jsdom = require('jsdom');
 global.document = jsdom.jsdom('<html><head></head><body></body></html');
 global.window = document.defaultView;
 const should = require('should');
-const transactionDB = require('../transaction-db');
 const TransactionModel = require('../transaction/model.js');
 const App = require('../app.js');
 
 describe('form entry', function () {
     var app;
     beforeEach(function () {
-        return transactionDB.allDocs({include_docs: true}).then((res) => {
-            return Promise.all(res.rows.map((row) => {
-                return transactionDB.remove(row.id, row.value.rev);
-            }));
-        });
+        TransactionModel.empty();
     });
     beforeEach(function () {
         app = new App();
+    });
+    afterEach(function () {
+        TransactionModel.removeAllListeners();
     });
     describe('form initially', function () {
         it('is empty', function () {
@@ -33,7 +31,7 @@ describe('form entry', function () {
 
         beforeEach(function () {
             saveCalled = false;
-            app.output.on('update', function () {
+            TransactionModel.on('created', function () {
                 saveCalled = true;
             });
             app.form.fields.date.input.value = 'notadate';
@@ -82,21 +80,19 @@ describe('form entry', function () {
             });
         });
         describe('after saving', function () {
-            var output = '';
-            beforeEach(function (done) {
-                app.output.once('update', function (str) {
-                    output = str;
-                    done();
+            beforeEach(function () {
+                return new Promise((resolve, reject) => {
+                    TransactionModel.on('created', resolve);
+                }).then(() => {
+                    return new Promise((resolve, reject) => {
+                        app.list.on('change', resolve);
+                    });
                 });
             });
             it('outputs the newly saved item', function () {
-                var o = JSON.parse(output);
-                Object.keys(input).forEach((k) => {
-                    o.should.have.property(k, input[k]);
-                });
-                o.should.have.property('_id');
-                o.should.have.property('_rev');
-                o._rev.should.startWith('1-');
+                app.list.items[0].should.have.property('_id');
+                app.list.items[0].should.have.property('_rev');
+                app.list.items[0]._rev.should.startWith('1-');
             });
             it('shuould have reset values' ,function () {
                 app.form.fields.date.input.value.should.equal('');

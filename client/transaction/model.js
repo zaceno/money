@@ -28,10 +28,25 @@ Transaction._defaults = {
 Transaction.list = function () {
     return db.allDocs({include_docs: true}).then(function (res) {
         return res.rows.map((row) => { return new Transaction(row.doc); });
+    }).then((transactions) => {
+        return transactions.sort((l, r) => {
+            var tl = new Date(l.date).getTime();
+            var tr = new Date(r.date).getTime();
+            return tr - tl;
+        });
     });
 };
 Transaction.create = function (data) {
     return new Transaction(data).save();
+};
+Transaction.empty = function () {
+    return db.allDocs({include_docs: true}).then((res) => {
+        return Promise.all(res.rows.map((row) => {
+            return db.remove(row.id, row.value.rev);
+        }));
+    }).then(() => {
+        Transaction.emit('change');
+    });
 };
 eventMixin(Transaction);
 
